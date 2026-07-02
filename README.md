@@ -45,6 +45,6 @@ truncate -s 10M os.img
 
 qemu-img create -f raw hdd.img 10M
 
-qemu-system-i386 -drive file=hdd.img,format=raw,if=none,id=drive-hdd -device ide-hd,bus=ide.0,unit=0,drive=drive-hdd -drive file=os.img,format=raw,if=none,id=drive-os -device ide-hd,bus=ide.0,unit=1,drive=drive-os,bootindex=1 -vga std -display curses
+qemu-system-i386 -drive file=hdd.img,format=raw,if=none,id=drive-hdd -device ide-hd,bus=ide.0,unit=0,drive=drive-hdd -drive file=os.img,format=raw,if=none,id=drive-os -device ide-hd,bus=ide.0,unit=1,drive=drive-os,bootindex=1
 
-qemu-system-i386 -drive file=hdd.img,format=raw,index=0,media=disk -vga std -display curses
+qemu-system-i386 -drive file=hdd.img,format=raw,index=0,media=disk
