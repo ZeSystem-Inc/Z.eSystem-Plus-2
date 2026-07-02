@@ -27,18 +27,24 @@ This release integrates crucial operating system subsystems, expanding the kerne
 With the addition of multiple modular subsystems, the compilation toolchain now compiles separate object files and links them tightly together:
 
 ```bash
-# 1. Assemble the 16-bit boot sector
+rm -f *.o *.bin os.img hdd.img
+
 nasm -f bin boot.asm -o boot.bin
 
-# 2. Compile the core kernel and all advanced subsystems
-i686-elf-g++ -c kernel.cpp -o kernel.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
-i686-elf-g++ -c esfs.cpp -o esfs.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
-i686-elf-g++ -c pci.cpp -o pci.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
-i686-elf-g++ -c disk.cpp -o disk.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
-i686-elf-g++ -c installer.cpp -o installer.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
+g++ -m32 -ffreestanding -fno-pie -fno-rtti -fno-exceptions -c kernel.cpp -o kernel.o
+g++ -m32 -ffreestanding -fno-pie -fno-rtti -fno-exceptions -c disk.cpp -o disk.o
+g++ -m32 -ffreestanding -fno-pie -fno-rtti -fno-exceptions -c esfs.cpp -o esfs.o
+g++ -m32 -ffreestanding -fno-pie -fno-rtti -fno-exceptions -c installer.cpp -o installer.o
+g++ -m32 -ffreestanding -fno-pie -fno-rtti -fno-exceptions -c pci.cpp -o pci.o
 
-# 3. Link all compiled objects using the layout script
-i686-elf-ld -T linker.ld -o kernel.bin kernel.o esfs.o pci.o disk.o installer.o --oformat binary
+ld -m elf_i386 -T linker.ld --oformat binary kernel.o disk.o esfs.o installer.o pci.o -o kernel.bin
 
-# 4. Generate the final bootable raw storage image
+truncate -s 20480 kernel.bin
 cat boot.bin kernel.bin > os.img
+truncate -s 10M os.img
+
+qemu-img create -f raw hdd.img 10M
+
+qemu-system-i386 -drive file=hdd.img,format=raw,if=none,id=drive-hdd -device ide-hd,bus=ide.0,unit=0,drive=drive-hdd -drive file=os.img,format=raw,if=none,id=drive-os -device ide-hd,bus=ide.0,unit=1,drive=drive-os,bootindex=1 -vga std -display curses
+
+qemu-system-i386 -drive file=hdd.img,format=raw,index=0,media=disk -vga std -display curses
